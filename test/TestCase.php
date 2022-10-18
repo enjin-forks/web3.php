@@ -19,7 +19,7 @@ class TestCase extends BaseTestCase
      * 
      * @var string
      */
-    protected $testRinkebyHost = 'https://rinkeby.infura.io/vuethexplore';
+    protected $testRinkebyHost = 'https://sepolia.infura.io/v3/60c323229c024b8d9a3a692250cef607';
 
     /**
      * testHost
@@ -40,15 +40,15 @@ class TestCase extends BaseTestCase
      */
     public function setUp(): void
     {
-        $web3 = new Web3($this->testHost);
+        $web3 = new Web3($this->testRinkebyHost);
         $this->web3 = $web3;
 
-        $web3->eth->coinbase(function ($err, $coinbase) {
-            if ($err !== null) {
-                return $this->fail($err->getMessage());
-            }
-            $this->coinbase = $coinbase;
-        });
+//        $web3->eth->coinbase(function ($err, $coinbase) {
+//            if ($err !== null) {
+//                return $this->fail($err->getMessage());
+//            }
+//            $this->coinbase = $coinbase;
+//        });
     }
 
     /**

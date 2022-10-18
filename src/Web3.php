@@ -2,92 +2,39 @@
 
 /**
  * This file is part of web3.php package.
- * 
+ *
  * (c) Kuan-Cheng,Lai <alk03073135@gmail.com>
- * 
- * @author Peter Lai <alk03073135@gmail.com>
+ *
  * @license MIT
  */
 
 namespace Web3;
 
-use Web3\Eth;
-use Web3\Net;
-use Web3\Personal;
-use Web3\Shh;
-use Web3\Utils;
-use Web3\Providers\Provider;
 use Web3\Providers\HttpProvider;
-use Web3\RequestManagers\RequestManager;
+use Web3\Providers\Provider;
 use Web3\RequestManagers\HttpRequestManager;
 
 class Web3
 {
-    /**
-     * provider
-     *
-     * @var \Web3\Providers\Provider
-     */
-    protected $provider;
+    protected Provider $provider;
 
-    /**
-     * eth
-     * 
-     * @var \Web3\Eth
-     */
-    protected $eth;
+    protected Eth $eth;
 
-    /**
-     * net
-     * 
-     * @var \Web3\Net
-     */
-    protected $net;
+    protected Net $net;
 
-    /**
-     * personal
-     * 
-     * @var \Web3\Personal
-     */
-    protected $personal;
+    protected Personal $personal;
 
-    /**
-     * shh
-     * 
-     * @var \Web3\Shh
-     */
-    protected $shh;
+    protected Shh $shh;
 
-    /**
-     * utils
-     * 
-     * @var \Web3\Utils
-     */
-    protected $utils;
+    protected Utils $utils;
 
-    /**
-     * methods
-     * 
-     * @var array
-     */
-    private $methods = [];
+    private array $methods = [];
 
-    /**
-     * allowedMethods
-     * 
-     * @var array
-     */
-    private $allowedMethods = [
-        'web3_clientVersion', 'web3_sha3'
+    private array $allowedMethods = [
+        'web3_clientVersion', 'web3_sha3',
     ];
 
-    /**
-     * construct
-     *
-     * @param string|\Web3\Providers\Provider $provider
-     * @return void
-     */
-    public function __construct($provider)
+    public function __construct(Provider|string $provider)
     {
         if (is_string($provider) && (filter_var($provider, FILTER_VALIDATE_URL) !== false)) {
             // check the uri schema
@@ -96,25 +43,18 @@ class Web3
 
                 $this->provider = new HttpProvider($requestManager);
             }
-        } else if ($provider instanceof Provider) {
+        } elseif ($provider instanceof Provider) {
             $this->provider = $provider;
         }
     }
 
-    /**
-     * call
-     * 
-     * @param string $name
-     * @param array $arguments
-     * @return void
-     */
-    public function __call($name, $arguments)
+    public function __call(string $name, array $arguments)
     {
         if (empty($this->provider)) {
             throw new \RuntimeException('Please set provider first.');
         }
 
-        $class = explode('\\', get_class());
+        $class = explode('\\', __CLASS__);
 
         if (preg_match('/^[a-zA-Z0-9]+$/', $name) === 1) {
             $method = strtolower($class[1]) . '_' . $name;
@@ -122,6 +62,7 @@ class Web3
             if (!in_array($method, $this->allowedMethods)) {
                 throw new \RuntimeException('Unallowed rpc method: ' . $method);
             }
+
             if ($this->provider->isBatch) {
                 $callback = null;
             } else {
@@ -131,6 +72,7 @@ class Web3
                     throw new \InvalidArgumentException('The last param must be callback function.');
                 }
             }
+
             if (!array_key_exists($method, $this->methods)) {
                 // new the method
                 $methodClass = sprintf("\Web3\Methods\%s\%s", ucfirst($class[1]), ucfirst($name));
@@ -139,6 +81,7 @@ class Web3
             } else {
                 $methodObject = $this->methods[$method];
             }
+
             if ($methodObject->validate($arguments)) {
                 $inputs = $methodObject->transform($arguments, $methodObject->inputFormatters);
                 $methodObject->arguments = $inputs;
@@ -147,141 +90,92 @@ class Web3
         }
     }
 
-    /**
-     * get
-     * 
-     * @param string $name
-     * @return mixed
-     */
-    public function __get($name)
+    public function __get(string $name)
     {
         $method = 'get' . ucfirst($name);
 
         if (method_exists($this, $method)) {
             return call_user_func_array([$this, $method], []);
         }
+
         return false;
     }
 
-    /**
-     * set
-     * 
-     * @param string $name
-     * @param mixed $value
-     * @return mixed
-     */
-    public function __set($name, $value)
+    public function __set(string $name, mixed $value)
     {
         $method = 'set' . ucfirst($name);
 
         if (method_exists($this, $method)) {
             return call_user_func_array([$this, $method], [$value]);
         }
+
         return false;
     }
 
-    /**
-     * getProvider
-     * 
-     * @return \Web3\Providers\Provider
-     */
-    public function getProvider()
+    public function getProvider(): Provider
     {
         return $this->provider;
     }
 
-    /**
-     * setProvider
-     * 
-     * @param \Web3\Providers\Provider $provider
-     * @return bool
-     */
-    public function setProvider($provider)
+    public function setProvider(Provider $provider): self
     {
-        if ($provider instanceof Provider) {
-            $this->provider = $provider;
-            return true;
-        }
-        return false;
+        $this->provider = $provider;
+
+        return $this;
     }
 
-    /**
-     * getEth
-     * 
-     * @return \Web3\Eth
-     */
-    public function getEth()
+    public function getEth(): Eth
     {
         if (!isset($this->eth)) {
-            $eth = new Eth($this->provider);
-            $this->eth = $eth;
+            $this->eth = new Eth($this->provider);
         }
+
         return $this->eth;
     }
 
-    /**
-     * getNet
-     * 
-     * @return \Web3\Net
-     */
-    public function getNet()
+    public function getNet(): Net
     {
         if (!isset($this->net)) {
-            $net = new Net($this->provider);
-            $this->net = $net;
+            $this->net = new Net($this->provider);
         }
+
         return $this->net;
     }
 
-    /**
-     * getPersonal
-     * 
-     * @return \Web3\Personal
-     */
-    public function getPersonal()
+    public function getPersonal(): Personal
     {
         if (!isset($this->personal)) {
-            $personal = new Personal($this->provider);
-            $this->personal = $personal;
+            $this->personal = new Personal($this->provider);
         }
+
         return $this->personal;
     }
 
-    /**
-     * getShh
-     * 
-     * @return \Web3\Shh
-     */
-    public function getShh()
+    public function getShh(): Shh
     {
         if (!isset($this->shh)) {
-            $shh = new Shh($this->provider);
-            $this->shh = $shh;
+            $this->shh = new Shh($this->provider);
         }
+
         return $this->shh;
     }
 
-    /**
-     * getUtils
-     * 
-     * @return \Web3\Utils
-     */
-    public function getUtils()
+    public function getUtils(): Utils
     {
         if (!isset($this->utils)) {
-            $utils = new Utils;
-            $this->utils = $utils;
+            $this->utils = new Utils;
         }
+
         return $this->utils;
     }
 
     /**
-     * batch
-     * 
+     * batch.
+     *
      * @param bool $status
      * @return void
      */
-    public function batch($status)
+    public function batch($status): void
     {
         $status = is_bool($status);
 

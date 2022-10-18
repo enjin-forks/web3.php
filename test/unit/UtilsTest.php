@@ -5,7 +5,8 @@ namespace Test\Unit;
 use InvalidArgumentException;
 use stdClass;
 use Test\TestCase;
-use phpseclib\Math\BigInteger as BigNumber;
+use phpseclib3\Math\BigInteger as BigNumber;
+use TypeError;
 use Web3\Utils;
 use Web3\Contract;
 
@@ -177,7 +178,7 @@ class UtilsTest extends TestCase
         $this->assertEquals('30', Utils::toHex(new BigNumber(48)));
         $this->assertEquals('30', Utils::toHex(new BigNumber('48')));
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(TypeError::class);
         $hex = Utils::toHex(new stdClass);
     }
 
@@ -197,7 +198,7 @@ class UtilsTest extends TestCase
         $str = Utils::hexToBin('0xe4b883e5bda9e7a59ee4bb99e9b1bc');
         $this->assertEquals($str, '七彩神仙鱼');
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(TypeError::class);
         $str = Utils::hexToBin(new stdClass);
     }
 
@@ -214,7 +215,7 @@ class UtilsTest extends TestCase
         $isPrefixed = Utils::isZeroPrefixed('0x' . $this->testHex);
         $this->assertEquals($isPrefixed, true);
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(TypeError::class);
         $isPrefixed = Utils::isZeroPrefixed(new stdClass);
     }
 
@@ -243,7 +244,7 @@ class UtilsTest extends TestCase
         $isAddress = Utils::isAddress('0xCA35B7D915458EF540ADE6068DFE2F44E8FA73cc');
         $this->assertEquals($isAddress, false);
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(TypeError::class);
         $isAddress = Utils::isAddress(new stdClass);
     }
 
@@ -287,7 +288,7 @@ class UtilsTest extends TestCase
         $isAddressChecksum = Utils::isAddressChecksum('0xd1220a0cf47c7b9be7a2e6ba89f429762e7b9adb');
         $this->assertEquals($isAddressChecksum, false);
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(TypeError::class);
         $isAddressChecksum = Utils::isAddressChecksum(new stdClass);
     }
 
@@ -347,7 +348,7 @@ class UtilsTest extends TestCase
         $str = Utils::sha3('baz(uint32,bool)');
         $this->assertEquals(mb_substr($str, 0, 10), '0xcdcd77c0');
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(TypeError::class);
         $str = Utils::sha3(new stdClass);
     }
 
@@ -394,11 +395,8 @@ class UtilsTest extends TestCase
         $bn = Utils::toWei('', 'ether');
         $this->assertEquals('0', $bn->toString());
 
-        try {
-            $bn = Utils::toWei('0x5218', new stdClass);
-        } catch (InvalidArgumentException $e) {
-            $this->assertEquals('toWei unit must be string.', $e->getMessage());
-        }
+        $this->expectException(TypeError::class);
+        $bn = Utils::toWei('0x5218', new stdClass);
 
         try {
             $bn = Utils::toWei('0x5218', 'test');
